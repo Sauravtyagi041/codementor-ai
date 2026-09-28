@@ -105,7 +105,7 @@ export const aiUsage = sqliteTable(
 );
 
 export const authAccounts = sqliteTable('auth_accounts', {
-  id:text('id').primaryKey(), email:text('email').notNull().unique(), name:text('name').notNull(), passwordHash:text('password_hash'), created:integer('created').notNull(),
+  id:text('id').primaryKey(), email:text('email').notNull().unique(), name:text('name').notNull(), passwordHash:text('password_hash'), emailVerified:integer('email_verified').notNull().default(0), created:integer('created').notNull(),
 });
 export const authSessions = sqliteTable('auth_sessions', {
   tokenHash:text('token_hash').primaryKey(), userId:text('user_id').notNull().references(()=>authAccounts.id,{onDelete:'cascade'}), expires:integer('expires').notNull(),
@@ -119,3 +119,5 @@ export const passwordResets = sqliteTable('password_resets', {
 
 export const googleIdentities=sqliteTable('google_identities',{sub:text('sub').primaryKey(),userId:text('user_id').notNull().unique().references(()=>authAccounts.id,{onDelete:'cascade'})});
 export const googleLoginStates=sqliteTable('google_login_states',{state:text('state').primaryKey(),verifier:text('verifier').notNull(),expires:integer('expires').notNull()});
+
+export const emailVerifications=sqliteTable('email_verifications',{tokenHash:text('token_hash').primaryKey(),userId:text('user_id').notNull().references(()=>authAccounts.id,{onDelete:'cascade'}),expires:integer('expires').notNull()});

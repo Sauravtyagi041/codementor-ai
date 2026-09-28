@@ -48,6 +48,7 @@ export async function GET(request:Request){
    await db.batch([db.prepare('INSERT INTO auth_accounts(id,email,name,password_hash,created) VALUES(?,?,?,NULL,?)').bind(id,email,(profile.name||email).slice(0,80),Date.now()),db.prepare('INSERT INTO google_identities(sub,user_id) VALUES(?,?)').bind(profile.sub,id)]);identity={user_id:id};
    }
   }
+  await db.prepare('UPDATE auth_accounts SET email_verified=1 WHERE id=?').bind(identity.user_id).run();
   const session=freshToken();await db.prepare('INSERT INTO auth_sessions(token_hash,user_id,expires) VALUES(?,?,?)').bind(await digest(session),identity.user_id,Date.now()+SESSION_SECONDS*1000).run();
   const headers=new Headers({Location:'/auth-complete', 'Cache-Control':'no-store'});headers.append('Set-Cookie',sessionCookie(session,request));headers.append('Set-Cookie',stateCookie('',request,0));
   return new Response(null,{status:303,headers});

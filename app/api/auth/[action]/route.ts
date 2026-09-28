@@ -1,3 +1,4 @@
+import {emailDeliveryConfig,sendVerification,verifyEmail} from '@/lib/email-verification';
 import {recoverPassword} from '@/lib/reset-password';
 import {hash,compare} from 'bcryptjs';
 import {z} from 'zod';
@@ -16,24 +17,27 @@ export async function POST(request:Request){try{
   const token=cookieToken(request.headers.get('cookie'));if(token)await database().prepare('DELETE FROM auth_sessions WHERE token_hash=?').bind(await digest(token)).run();
   return new Response(null,{status:303,headers:{...privateHeaders,Location:'/login','Set-Cookie':sessionCookie('',request,0)}});
  }
- if(!['signup','login','forgot-password','reset-password'].includes(action||''))throw new HttpError(404,'Unknown account action.');
+ if(!['signup','login','forgot-password','reset-password','verify-email'].includes(action||''))throw new HttpError(404,'Unknown account action.');
  if(!request.headers.get('content-type')?.startsWith('application/json'))throw new HttpError(415,'Send account details as JSON.');
  // Only the hosting edge may supply CF-Connecting-IP; local requests share a bounded bucket.
  await limit('ip:'+(request.headers.get('cf-connecting-ip')||'local'),60);
+ if(action==='verify-email')return await verifyEmail(await jsonBody(request));
  if(action==='forgot-password'||action==='reset-password')return await recoverPassword(action,await jsonBody(request),request);
  const body=credentials.parse(await jsonBody(request));await limit('account:'+body.email,10);
  await database().batch([database().prepare('DELETE FROM auth_limits WHERE expires<?').bind(Date.now()),database().prepare('DELETE FROM auth_sessions WHERE expires<?').bind(Date.now())]);
- let account=await database().prepare('SELECT id,password_hash FROM auth_accounts WHERE email=?').bind(body.email).first<{id:string;password_hash:string|null}>();
+ let account=await database().prepare('SELECT id,password_hash,email_verified FROM auth_accounts WHERE email=?').bind(body.email).first<{id:string;password_hash:string|null;email_verified:number}>();
  if(action==='signup'){
+  emailDeliveryConfig();
   if(!body.name)throw new HttpError(400,'Enter your name.');
   const passwordHash=await hash(body.password,12);
   if(account)throw new HttpError(409,'Could not create this account. Try signing in instead.');
   const id=crypto.randomUUID();const added=await database().prepare('INSERT OR IGNORE INTO auth_accounts(id,email,name,password_hash,created) VALUES(?,?,?,?,?) RETURNING id').bind(id,body.email,body.name,passwordHash,Date.now()).first();
   if(!added)throw new HttpError(409,'Could not create this account. Try signing in instead.');
-  account={id,password_hash:passwordHash};
+  return await sendVerification(id,body.email);
  }else{
   const valid=await compare(body.password,account?.password_hash||dummy);if(!valid||!account?.password_hash)throw new HttpError(401,'Email or password is incorrect.');
  }
+ if(!account.email_verified)return await sendVerification(account.id,body.email);
  const token=freshToken();
  const old=cookieToken(request.headers.get('cookie'));
  const statements=[database().prepare('INSERT INTO auth_sessions(token_hash,user_id,expires) VALUES(?,?,?)').bind(await digest(token),account.id,Date.now()+SESSION_SECONDS*1000)];

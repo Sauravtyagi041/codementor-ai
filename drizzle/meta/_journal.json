@@ -43,6 +43,13 @@
       "when": 1789326535765,
       "tag": "0005_superb_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790624258621,
+      "tag": "0006_romantic_vampiro",
+      "breakpoints": true
     }
   ]
 }

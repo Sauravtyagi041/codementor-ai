@@ -94,48 +94,17 @@ export default function AuthScreen({
             {user
               ? "You’re ready to continue."
               : signup
-                ? "Make room for your potential."
+                ? "Create your account."
                 : "Welcome back."}
           </h2>
           <p>
             {user
               ? `Signed in as ${user.displayName}`
               : signup
-                ? "Create your personal space for learning, practice and progress."
-                : "Pick up where you left off. Your code, notes and progress are waiting."}
+                ? "Choose how to get started."
+                : "Sign in to your workspace."}
           </p>
           {user?<a className="auth-continue" href="/">Open my dashboard</a>:<PasswordForm signup={signup}/>}
-          <div className="auth-steps">
-            <div>
-              <span>01</span>
-              <p>
-                Sign in
-                <br />
-                <strong>Securely</strong>
-              </p>
-            </div>
-            <div>
-              <span>02</span>
-              <p>
-                Set your goals
-                <br />
-                <strong>Your pace</strong>
-              </p>
-            </div>
-            <div>
-              <span>03</span>
-              <p>
-                Start practising
-                <br />
-                <strong>Keep growing</strong>
-              </p>
-            </div>
-          </div>
-          <p className="auth-account-note">
-            {signup
-              ? "Continue with Google to create an account without an app password."
-              : "Your saved learning data is private to your account on this Site."}
-          </p>
         </div>
         <footer className="auth-entry-footer">
           <ShieldCheck size={14} />
