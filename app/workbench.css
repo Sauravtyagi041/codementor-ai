@@ -68,3 +68,19 @@
 .auth-email-options{margin-top:20px;border:1px solid var(--border);border-radius:12px;padding:14px 16px}.auth-email-options summary{cursor:pointer;font-size:14px;font-weight:600;padding:4px}.auth-email-options[open] summary{margin-bottom:16px}.auth-caps-warning{color:#b57716;font-size:12px}.library-results-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0;font-size:12px;color:var(--muted-foreground)}.library-results-bar button{border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--foreground)}.topic-library-rows select:disabled{opacity:.6}.topic-library-rows a:focus-visible,.library-results-bar button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}@media(prefers-reduced-motion:no-preference){button,a,input,select{transition:background-color .12s,border-color .12s,box-shadow .12s}}
 
 .lc-studio .runner-contract{font-size:12px;line-height:1.6;padding:10px;background:#25332b;border:1px solid #3b5141;border-radius:7px;margin:10px 0}.test-result pre{max-height:300px;overflow:auto}.test-result strong{display:block;margin-bottom:8px}
+
+/* Compact Code Studio practice workflow. */
+.lc-studio .runner-case{border:1px solid #414141;border-radius:8px;margin:10px 0;background:#292929;overflow:hidden}
+.lc-studio .runner-case>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;color:#eee;list-style:none;font-weight:600}
+.lc-studio .runner-case>summary::before{content:'›';color:#aaa;transition:transform .15s}
+.lc-studio .runner-case[open]>summary::before{transform:rotate(90deg)}
+.lc-studio .runner-case>summary>span:first-of-type{flex:1}
+.lc-studio .runner-case fieldset{border:0;min-width:0;margin:0;padding:12px!important}
+.lc-studio .case-pass{color:#71dfa0}.lc-studio .case-result{color:#ffc978}.lc-studio .case-pending{color:#aaa;font-weight:400}
+.lc-studio .studio-related{margin-top:18px;border-top:1px solid #414141;padding-top:14px}
+.lc-studio .studio-related .actions{display:flex;flex-direction:column;align-items:stretch}
+.lc-studio .studio-related button{text-align:left;margin:0;padding:10px;border:1px solid #414141;border-radius:6px;background:#303030}
+.studio-catalog-list button[aria-current=true]{border-color:#bd8834;background:#42341f;color:#ffe0a3}
+.catalog-empty{padding:24px 12px;text-align:center}.catalog-empty button{justify-content:center}
+.lc-studio .runner-case>summary:focus-visible{outline:2px solid #ffa116;outline-offset:-3px}
+@media(max-width:600px){.lc-studio .lc-toolbar>div{flex-wrap:wrap}.lc-studio .studio-toolbar-actions{gap:6px}.lc-studio .runner-case .two-col{grid-template-columns:1fr}}

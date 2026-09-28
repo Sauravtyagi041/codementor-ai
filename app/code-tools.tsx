@@ -43,7 +43,7 @@ import {
 const sample = `function twoSum(nums, target) {\n  for (let i = 0; i < nums.length; i++) {\n    for (let j = i + 1; j < nums.length; j++) {\n      if (nums[i] + nums[j] === target) {\n        return [i, j];\n      }\n    }\n  }\n  return [];\n}`;
 export function CodeStudio() {
   const w = useWorkspace();
-  const problemDrafts=useRef<Record<string,{code:string;language:string}>>({});
+  const problemDrafts=useRef<Record<string,{code:string;language:string;drafts?:Record<string,string>}>>({});
   const languageDrafts=useRef<Record<string,string>>({});
   const [problemView,setProblemView]=useState("description");
   const [listOpen,setListOpen]=useState(false);
@@ -70,12 +70,16 @@ export function CodeStudio() {
     [ocr, setOcr] = useState("");
   useEffect(() => {
     try {
+      const savedDrafts=sessionStorage.getItem("codementor-problem-drafts");
+      if(savedDrafts)problemDrafts.current=JSON.parse(savedDrafts);
       const selected=sessionStorage.getItem("codementor-selected-problem");
       if(selected){const choice=JSON.parse(selected);const p=guidedProblems.find(p=>p.id===choice.id);if(p){loadProblem(p,choice.solution);sessionStorage.removeItem("codementor-selected-problem");return;}}
       const draft = sessionStorage.getItem("codementor-code-draft");
       if (draft) {
         const d = JSON.parse(draft);
         if(d.originalProblem){try{const parsed=parseOriginalExercise(JSON.stringify(d.originalProblem));setOriginalProblem({...parsed,id:d.originalProblem.id,tests:parsed.examples.map(e=>({input:e.input,expected:e.output})),similar:[]});}catch{}}
+        const restored=guidedProblems.find(p=>problemText(p)===d.context);
+        languageDrafts.current=(restored?problemDrafts.current[restored.id]?.drafts:undefined)||{};
         setCode(d.code);
         setLanguage(d.language);
         setTitle(d.title);
@@ -84,7 +88,10 @@ export function CodeStudio() {
     } catch {}
   }, []);
   useEffect(() => {
-    const timer=setTimeout(()=>{try{sessionStorage.setItem(
+    const timer=setTimeout(()=>{try{
+      const current=originalProblem&&problemText(originalProblem)===context?originalProblem:guidedProblems.find(p=>problemText(p)===context);
+      if(current){problemDrafts.current[current.id]={code,language,drafts:{...languageDrafts.current,[language]:code}};sessionStorage.setItem("codementor-problem-drafts",JSON.stringify(problemDrafts.current));}
+      sessionStorage.setItem(
       "codementor-code-draft",
       JSON.stringify({ code, language, title, context, originalProblem }),
     );}catch{}},350);
@@ -95,9 +102,9 @@ export function CodeStudio() {
     operationId.current++;setBusy("");
     generationId.current++;setGenerating(false);setOriginalProblem(p.id.startsWith("original:")?p:null);
     const current=originalProblem&&problemText(originalProblem)===context?originalProblem:guidedProblems.find(item=>problemText(item)===context);
-    if(current)problemDrafts.current[current.id]={code,language};
+    if(current)problemDrafts.current[current.id]={code,language,drafts:{...languageDrafts.current,[language]:code}};
     const saved=!solution?problemDrafts.current[p.id]:undefined;
-    languageDrafts.current={};setProblemView('description');setPreviousCode(code);setTitle(p.title);setContext(problemText(p));setLanguage(saved?.language||'JavaScript');setCode(saved?.code||runnableCode(p,solution));setResult('');setHint(0);setError('');
+    languageDrafts.current=saved?.drafts||{};setProblemView('description');setPreviousCode(code);setTitle(p.title);setContext(problemText(p));setLanguage(saved?.language||'JavaScript');setCode(saved?.code??runnableCode(p,solution));setResult('');setHint(0);setError('');
   }
   async function chooseLibraryQuestion(p:Question){
     const requestId=++generationId.current;setGenerating(true);setError('');setListOpen(false);
@@ -219,7 +226,7 @@ export function CodeStudio() {
   }
   return (
     <div onKeyDown={e=>{if(e.key==='Escape')setFocusMode(false);}} className={`lc-studio ${focusMode?'studio-focus':''}`} style={{'--problem-width':split+'%'} as import("react").CSSProperties}>
-      <header className="lc-toolbar"><div><Code2 size={19}/><strong>Code Studio</strong><button type="button" aria-expanded={listOpen} onClick={()=>setListOpen(v=>!v)}>☰ Problems</button><span className="lc-muted">Write · test · understand</span></div><div className="studio-toolbar-actions"><StudioStopwatch key={activeProblem?.id||"scratch"} problemId={activeProblem?.id||"scratch"}/><button type="button" aria-pressed={focusMode} onClick={()=>setFocusMode(v=>!v)}>{focusMode?'Exit focus':'Focus mode'}</button><button type="button" disabled={!!busy} onClick={format}>Format</button><button type="button" disabled={!code.trim()||(!canExecute(language)&&!previewLanguages.includes(language))} onClick={()=>{document.getElementById('studio-console')?.scrollIntoView({block:'nearest'});window.dispatchEvent(new Event('codementor-run-tests'));}} className="lc-run-link">▶ {previewLanguages.includes(language)?'Preview':'Run tests'} <kbd>Ctrl ↵</kbd></button></div></header>
+      <header className="lc-toolbar"><div><Code2 size={19}/><strong>Code Studio</strong><span className="lc-muted">Write · test · understand</span></div><div className="studio-toolbar-actions"><StudioStopwatch key={activeProblem?.id||"scratch"} problemId={activeProblem?.id||"scratch"}/><button type="button" aria-pressed={focusMode} onClick={()=>setFocusMode(v=>!v)}>{focusMode?'Exit focus':'Focus mode'}</button><button type="button" disabled={!!busy} onClick={format}>Format</button><button type="button" disabled={!code.trim()||(!canExecute(language)&&!previewLanguages.includes(language))} onClick={()=>{document.getElementById('studio-console')?.scrollIntoView({block:'nearest'});window.dispatchEvent(new Event('codementor-run-tests'));}} className="lc-run-link">▶ {previewLanguages.includes(language)?'Preview':'Run tests'} <kbd>Ctrl ↵</kbd></button></div></header>
       {error&&<div className="studio-error-banner" role="alert"><span>{error}</span><button type="button" onClick={()=>setError('')} aria-label="Dismiss error">×</button></div>}
       {busy&&<p className="studio-task-status" role="status">{busy==='format'?'Formatting your code…':busy==='ocr'?'Reading image…':'Preparing '+busy+'…'}</p>}
       {result&&<button type="button" className="studio-reopen-analysis" onClick={()=>setAnalysisOpen(true)}>Open latest analysis ↗</button>}
@@ -231,11 +238,11 @@ export function CodeStudio() {
         <Dialog open={listOpen} onOpenChange={setListOpen}><DialogContent className="studio-problem-drawer"><DialogHeader><DialogTitle>Choose a problem</DialogTitle><DialogDescription>Choose a complete exercise, or create a new original exercise from a platform question’s topics.</DialogDescription></DialogHeader><div className="studio-library-tabs"><button type="button" aria-pressed={libraryTab==='all'} onClick={()=>setLibraryTab('all')}>All platform questions</button><button type="button" aria-pressed={libraryTab==='guided'} onClick={()=>setLibraryTab('guided')}>Complete in-app exercises</button></div><div className="studio-library-scroll">{libraryTab==='all'?<TopicPracticeLibrary onChoose={chooseLibraryQuestion}/>:<StudioProblemPicker activeId={activeProblem?.id} onChoose={p=>{loadProblem(p,false);setListOpen(false);}}/>}</div></DialogContent></Dialog>
         <section className="surface studio-problem">
           <div className="studio-problem-bar"><button type="button" className="studio-open-problems" aria-haspopup="dialog" aria-expanded={listOpen} onClick={()=>setListOpen(true)}>☰ Choose problem <span>Browse questions →</span></button></div>
-          <div className="lc-tabs"><button type="button" onClick={()=>setDescriptionOpen(true)} disabled={!activeProblem}>Expand description ↗</button><button type="button" aria-pressed={problemView==='description'} onClick={()=>setProblemView('description')}>Description</button><button type="button" aria-expanded={listOpen} onClick={()=>setListOpen(v=>!v)}>Problem list</button></div>
+          <div className="lc-tabs"><button type="button" onClick={()=>setDescriptionOpen(true)} disabled={!activeProblem}>Expand description ↗</button><button type="button" aria-pressed={problemView==='description'} onClick={()=>setProblemView('description')}>Description</button></div>
           <div className="lc-problem-content" key={activeProblem?.id||externalUrl||'custom'}>
           {generating&&<p role="status">Writing a complete original exercise with examples and constraints… <button onClick={()=>{generationId.current++;setGenerating(false);}}>Cancel</button></p>}
           {originalProblem&&activeProblem&&<p className="original-exercise-notice">AI-generated original practice exercise. This is a new question for the selected concepts, not the external platform question. Expected outputs and solution are not independently verified.</p>}
-          {problemView==='platform'?<StudioProblemPicker initialTopic={activeProblem?.topic} onChoose={p=>loadProblem(p,false)}/>:activeProblem?<><div className="studio-question-nav"><span>{activeProblem.topic}</span>{[-1,1].map(step=>{const sequence=guidedProblems.filter(p=>p.topic===activeProblem.topic).sort((a,b)=>({Easy:0,Medium:1,Hard:2}[a.difficulty||'Easy'])-({Easy:0,Medium:1,Hard:2}[b.difficulty||'Easy']));const next=sequence[sequence.findIndex(p=>p.id===activeProblem.id)+step];return <button key={step} disabled={!next} onClick={()=>next&&loadProblem(next,false)}>{step<0?'← Previous':'Next →'}</button>;})}</div><ProblemDescription problem={activeProblem}/><details className="studio-solution"><summary>Worked solution & complexity</summary><pre><code>{activeProblem.code}</code></pre><p>{activeProblem.cost}</p><p>{activeProblem.pitfalls}</p><button type="button" onClick={()=>loadProblem(activeProblem,true)}>Load worked JavaScript solution</button></details><div className="actions">{guidedProblems.filter(p=>p.topic===activeProblem.topic&&p.id!==activeProblem.id).sort((a,b)=>({Easy:0,Medium:1,Hard:2}[a.difficulty||'Easy'])-({Easy:0,Medium:1,Hard:2}[b.difficulty||'Easy'])).map(item=>{const id=item.id;const next=item;return next?<button type="button" key={id} onClick={()=>loadProblem(next,false)}>Practice next: {next.title}</button>:null;})}</div></>:<><h2>{title||'Untitled problem'}</h2><span className="lc-topic">Practice · {language}</span><button type="button" className="lc-run-link" onClick={()=>setProblemView('platform')}>Choose another problem</button>{externalUrl&&<p><a href={externalUrl} target="_blank" rel="noopener noreferrer">Read full official statement ↗</a></p>}<div className="lc-statement">{context||'Choose a problem from the Problems tab, or paste one in Edit statement.'}</div></>}
+          {problemView==='platform'?<StudioProblemPicker initialTopic={activeProblem?.topic} onChoose={p=>loadProblem(p,false)}/>:activeProblem?<><div className="studio-question-nav"><span>{activeProblem.topic}</span>{[-1,1].map(step=>{const sequence=guidedProblems.filter(p=>p.topic===activeProblem.topic).sort((a,b)=>({Easy:0,Medium:1,Hard:2}[a.difficulty||'Easy'])-({Easy:0,Medium:1,Hard:2}[b.difficulty||'Easy']));const next=sequence[sequence.findIndex(p=>p.id===activeProblem.id)+step];return <button key={step} disabled={!next} onClick={()=>next&&loadProblem(next,false)}>{step<0?'← Previous':'Next →'}</button>;})}</div><ProblemDescription problem={activeProblem}/><details className="studio-solution"><summary>Worked solution & complexity</summary><pre><code>{activeProblem.code}</code></pre><p>{activeProblem.cost}</p><p>{activeProblem.pitfalls}</p><button type="button" onClick={()=>loadProblem(activeProblem,true)}>Load worked JavaScript solution</button></details><details className="studio-related"><summary>More practice in this topic</summary><div className="actions">{guidedProblems.filter(p=>p.topic===activeProblem.topic&&p.id!==activeProblem.id).sort((a,b)=>({Easy:0,Medium:1,Hard:2}[a.difficulty||'Easy'])-({Easy:0,Medium:1,Hard:2}[b.difficulty||'Easy'])).slice(0,3).map(item=>{const id=item.id;const next=item;return next?<button type="button" key={id} onClick={()=>loadProblem(next,false)}>Practice next: {next.title}</button>:null;})}</div></details></>:<><h2>{title||'Untitled problem'}</h2><span className="lc-topic">Practice · {language}</span><button type="button" className="lc-run-link" onClick={()=>setProblemView('platform')}>Choose another problem</button>{externalUrl&&<p><a href={externalUrl} target="_blank" rel="noopener noreferrer">Read full official statement ↗</a></p>}<div className="lc-statement">{context||'Choose a problem from the Problems tab, or paste one in Edit statement.'}</div></>}
           </div>
         </section>
         <div className="lc-right"><section className="editor-panel">
