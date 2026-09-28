@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789093973843,
+      "tag": "0000_flawless_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789213752138,
+      "tag": "0001_awesome_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789215568429,
+      "tag": "0002_charming_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789306283349,
+      "tag": "0003_rainy_gladiator",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789326291884,
+      "tag": "0004_unknown_firedrake",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789326535765,
+      "tag": "0005_superb_galactus",
+      "breakpoints": true
+    }
+  ]
+}
