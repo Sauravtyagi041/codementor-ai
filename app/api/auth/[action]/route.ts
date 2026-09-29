@@ -1,3 +1,4 @@
+import {startGoogle} from '@/lib/google-login';
 import {emailDeliveryConfig,sendVerification,verifyEmail} from '@/lib/email-verification';
 import {recoverPassword} from '@/lib/reset-password';
 import {hash,compare} from 'bcryptjs';
@@ -6,7 +7,7 @@ import {database} from '@/db';
 import {jsonBody,failure,HttpError,privateHeaders} from '@/lib/server';
 import {cookieToken,digest,freshToken,sessionCookie,SESSION_SECONDS} from '@/lib/password-auth';
 const password=z.string().min(12,'Use at least 12 characters.').max(72).refine(p=>new TextEncoder().encode(p).length<=72,'Password must fit within 72 UTF-8 bytes.');
-const credentials=z.object({email:z.string().trim().email().max(254).transform(s=>s.toLowerCase()),password,name:z.string().trim().min(2).max(80).optional()});
+const credentials=z.object({email:z.string().trim().email().max(254).transform(s=>s.toLowerCase()),password,linkGoogle:z.boolean().optional(),name:z.string().trim().min(2).max(80).optional()});
 // Dummy hash avoids skipping password work for unknown accounts.
 const dummy='$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW';
 async function limit(key:string,max:number){const now=Date.now(),bucket=Math.floor(now/900000),id=await digest(key+':'+bucket);const row=await database().prepare('INSERT INTO auth_limits(key,count,expires) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<? RETURNING count').bind(id,(bucket+1)*900000,max).first();if(!row)throw new HttpError(429,'Too many attempts. Please wait 15 minutes and try again.');}
@@ -37,6 +38,7 @@ export async function POST(request:Request){try{
  }else{
   const valid=await compare(body.password,account?.password_hash||dummy);if(!valid||!account?.password_hash)throw new HttpError(401,'Email or password is incorrect.');
  }
+ if(body.linkGoogle)return await startGoogle(request,account.id);
  if(!account.email_verified)return await sendVerification(account.id,body.email);
  const token=freshToken();
  const old=cookieToken(request.headers.get('cookie'));
