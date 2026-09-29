@@ -6,7 +6,14 @@ A coding-learning prototype with topic practice, multi-language Code Studio, AI 
 
 [Open CodeMentor AI](https://codementor-practice-studio.sauravtyagi041.chatgpt.site)
 
-Use the deployed link above to try the app. The development instructions below are for running your own copy.
+This is the current public deployment. Open it directly in your browser; no local installation is required.
+
+- [Sign in](https://codementor-practice-studio.sauravtyagi041.chatgpt.site/login)
+- [Create an account](https://codementor-practice-studio.sauravtyagi041.chatgpt.site/signup)
+
+Email verification and password-reset delivery still need an email service. See the limitations below before trying email registration.
+
+The app remains on its existing hosting. No migration to a separate Cloudflare deployment or custom domain has been made. Local development below is optional and only needed to run your own copy.
 
 ## Local development
 
